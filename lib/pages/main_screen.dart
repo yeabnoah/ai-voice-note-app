@@ -8,6 +8,8 @@ class EntryApp extends StatefulWidget {
   State<EntryApp> createState() => _EntryAppState();
 }
 
+// console.log(test)
+
 class _EntryAppState extends State<EntryApp> {
   final List pages = [Home(), About()];
 

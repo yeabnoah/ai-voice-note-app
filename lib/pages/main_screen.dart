@@ -56,9 +56,9 @@ class _EntryAppState extends State<EntryApp> {
           ),
           backgroundColor: Colors.black,
         ),
-        body: pages[indexChange], // Use the dynamic indexChange here
+        body: pages[indexChange],
         bottomNavigationBar: BottomNavigationBar(
-          currentIndex: indexChange, // Set the current index
+          currentIndex: indexChange,
           onTap: navigationFunction,
           items: const [
             BottomNavigationBarItem(

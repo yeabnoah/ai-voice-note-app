@@ -11,20 +11,20 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int counter = 0;
 
+  void incrementFunction() {
+    setState(() {
+      counter++;
+    });
+  }
+
+  void decrementFunction() {
+    setState(() {
+      counter--;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    void incrementFunction() {
-      setState(() {
-        counter++;
-      });
-    }
-
-    void decrementFunction() {
-      setState(() {
-        counter--;
-      });
-    }
-
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(

@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface INote extends Document {
     title: string;
-    content: string;
+    content: any;
     date: Date;
     tags: string[];
     user: mongoose.Types.ObjectId;
@@ -12,7 +12,7 @@ export interface INote extends Document {
 
 const NoteSchema: Schema = new Schema({
     title: { type: String, required: true },
-    content: { type: String, required: true },
+    content: { type: Schema.Types.Mixed, required: true },
     date: { type: Date, default: Date.now },
     tags: [{ type: String }],
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }

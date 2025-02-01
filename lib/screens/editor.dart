@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hope/models/note.dart';
 import 'package:hope/services/api_service.dart';
@@ -11,6 +12,7 @@ class EditorScreen extends StatefulWidget {
 }
 
 class _EditorScreenState extends State<EditorScreen> {
+  late quill.QuillController _controller;
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   String? _selectedTag;
@@ -25,6 +27,15 @@ class _EditorScreenState extends State<EditorScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _controller = quill.QuillController(
+      document: quill.Document(),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final note = ModalRoute.of(context)?.settings.arguments as Note?;
@@ -32,15 +43,12 @@ class _EditorScreenState extends State<EditorScreen> {
       _existingNote = note;
       _titleController.text = note.title;
       _contentController.text = note.content.toString();
-      _selectedTag = _availableTags.firstWhere(
-        (tag) => tag.toLowerCase() == note.tag?.toLowerCase(),
-        orElse: () => note.tag ?? '',
-      );
+      _selectedTag = note.tag;
     }
   }
 
   Future<void> _saveNote() async {
-    if (_titleController.text.isEmpty || _contentController.text.isEmpty) {
+    if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill all fields')),
       );
@@ -112,49 +120,41 @@ class _EditorScreenState extends State<EditorScreen> {
             ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              style: GoogleFonts.inter(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Title',
-                hintStyle: GoogleFonts.inter(color: Colors.grey),
-                border: const UnderlineInputBorder(),
-              ),
+      body: Column(
+        children: [
+          quill.QuillToolbar.simple(
+            configurations: quill.QuillSimpleToolbarConfigurations(
+              controller: _controller,
+              showAlignmentButtons: true,
+              showBackgroundColorButton: true,
+              showBoldButton: true,
+              showColorButton: true,
+              showCodeBlock: true,
+              showFontFamily: true,
+              showFontSize: true,
+              showItalicButton: true,
+              showUnderLineButton: true,
+              showStrikeThrough: true,
+              showInlineCode: true,
+              showListBullets: true,
+              showListNumbers: true,
+              showQuote: true,
+              showIndent: true,
+              showLink: true,
             ),
-            const SizedBox(height: 16),
-            DropdownButton<String>(
-              value: _selectedTag,
-              hint: Text(
-                'Select Tag',
-                style: GoogleFonts.inter(color: Colors.grey),
-              ),
-              items: _availableTags
-                  .map((tag) => DropdownMenuItem(
-                        value: tag,
-                        child: Text(tag),
-                      ))
-                  .toList(),
-              onChanged: (value) => setState(() => _selectedTag = value),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: TextField(
-                controller: _contentController,
-                style: GoogleFonts.inter(color: Colors.white),
-                maxLines: null,
-                decoration: InputDecoration(
-                  hintText: 'Start typing...',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey),
-                  border: InputBorder.none,
+          ),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: quill.QuillEditor.basic(
+                configurations: quill.QuillEditorConfigurations(
+                  controller: _controller,
+                  autoFocus: false,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _isLoading ? null : _saveNote,
@@ -164,5 +164,13 @@ class _EditorScreenState extends State<EditorScreen> {
             : const Icon(Icons.save, color: Colors.black),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    _controller.dispose();
+    super.dispose();
   }
 }

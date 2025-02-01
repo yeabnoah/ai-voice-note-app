@@ -80,7 +80,7 @@ class ApiService {
   }
 
   static Future<Note> createNote(
-      String title, String content, List<String> tags) async {
+      String title, dynamic content, List<String> tags) async {
     final token = await getToken();
     final response = await http.post(
       Uri.parse('$baseUrl/note/createNote'),
@@ -90,7 +90,7 @@ class ApiService {
       },
       body: json.encode({
         'title': title,
-        'content': content,
+        'content': json.encode(content),
         'tags': tags,
       }),
     );
@@ -110,7 +110,7 @@ class ApiService {
   }
 
   static Future<Note> updateNote(
-      String id, String title, String content, List<String> tags) async {
+      String id, String title, dynamic content, List<String> tags) async {
     final token = await getToken();
     final response = await http.put(
       Uri.parse('$baseUrl/note/singlenote/$id'),
@@ -120,7 +120,7 @@ class ApiService {
       },
       body: json.encode({
         'title': title,
-        'content': content,
+        'content': json.encode(content),
         'tags': tags,
       }),
     );

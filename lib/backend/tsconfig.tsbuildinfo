@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/controllers/authController.ts","./src/controllers/noteController.ts","./src/middleware/auth.ts","./src/models/Note.ts","./src/models/User.ts"],"version":"5.7.3"}

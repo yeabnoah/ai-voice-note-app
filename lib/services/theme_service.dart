@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ThemeService extends ChangeNotifier {
   static const String _themeKey = 'isDarkMode';
@@ -16,16 +17,44 @@ class ThemeService extends ChangeNotifier {
     brightness: Brightness.light,
     primarySwatch: Colors.blue,
     scaffoldBackgroundColor: Colors.white,
-    appBarTheme: const AppBarTheme(
+    textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
+    appBarTheme: AppBarTheme(
       backgroundColor: Colors.white,
       elevation: 0,
-      iconTheme: IconThemeData(color: Colors.black),
-      titleTextStyle: TextStyle(color: Colors.black, fontSize: 20),
+      iconTheme: const IconThemeData(color: Colors.black),
+      titleTextStyle: GoogleFonts.inter(
+        color: Colors.black,
+        fontSize: 20,
+        fontWeight: FontWeight.w500,
+      ),
     ),
     cardColor: Colors.grey[100],
-    textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: Colors.black),
-      bodyMedium: TextStyle(color: Colors.black87),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.grey[100],
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.black),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
     ),
   );
 
@@ -33,22 +62,22 @@ class ThemeService extends ChangeNotifier {
         brightness: Brightness.dark,
         primaryColor: const Color(0xFF6E56F8),
         scaffoldBackgroundColor: const Color(0xFF1A1A1A),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        appBarTheme: AppBarTheme(
+          backgroundColor: const Color(0xFF1A1A1A),
+          elevation: 0,
+          titleTextStyle: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         cardColor: const Color(0xFF2D2D2D),
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFF6E56F8),
           secondary: Color(0xFF9182FA),
           surface: Color(0xFF2D2D2D),
           background: Color(0xFF1A1A1A),
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-          titleTextStyle: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
@@ -75,26 +104,6 @@ class ThemeService extends ChangeNotifier {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-          ),
-        ),
-        textTheme: const TextTheme(
-          headlineLarge: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-          headlineMedium: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-          bodyLarge: TextStyle(
-            fontSize: 16,
-            color: Colors.white70,
-          ),
-          bodyMedium: TextStyle(
-            fontSize: 14,
-            color: Colors.white60,
           ),
         ),
       );

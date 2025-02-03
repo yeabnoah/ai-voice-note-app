@@ -70,9 +70,9 @@ class ApiService {
                 id: json['_id'],
                 title: json['title'],
                 content: json['content'],
-                dateCreated: DateTime.parse(json['createdAt']),
-                dateModified: DateTime.parse(json['updatedAt']),
-                tag: json['tags']?.isNotEmpty == true ? json['tags'][0] : null,
+                createdAt: DateTime.parse(json['createdAt']),
+                updatedAt: DateTime.parse(json['updatedAt']),
+                tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
               ))
           .toList();
     }
@@ -90,7 +90,7 @@ class ApiService {
       },
       body: json.encode({
         'title': title,
-        'content': json.encode(content),
+        'content': content,
         'tags': tags,
       }),
     );
@@ -101,9 +101,9 @@ class ApiService {
         id: json['_id'],
         title: json['title'],
         content: json['content'],
-        dateCreated: DateTime.parse(json['createdAt']),
-        dateModified: DateTime.parse(json['updatedAt']),
-        tag: json['tags']?.isNotEmpty == true ? json['tags'][0] : null,
+        createdAt: DateTime.parse(json['createdAt']),
+        updatedAt: DateTime.parse(json['updatedAt']),
+        tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       );
     }
     throw Exception('Failed to create note');
@@ -120,7 +120,7 @@ class ApiService {
       },
       body: json.encode({
         'title': title,
-        'content': json.encode(content),
+        'content': content,
         'tags': tags,
       }),
     );
@@ -131,9 +131,9 @@ class ApiService {
         id: json['_id'],
         title: json['title'],
         content: json['content'],
-        dateCreated: DateTime.parse(json['createdAt']),
-        dateModified: DateTime.parse(json['updatedAt']),
-        tag: json['tags']?.isNotEmpty == true ? json['tags'][0] : null,
+        createdAt: DateTime.parse(json['createdAt']),
+        updatedAt: DateTime.parse(json['updatedAt']),
+        tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       );
     }
     throw Exception('Failed to update note');

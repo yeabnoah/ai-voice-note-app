@@ -14,7 +14,6 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   late quill.QuillController _controller;
   final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
   String? _selectedTag;
   bool _isLoading = false;
   Note? _existingNote;
@@ -30,7 +29,7 @@ class _EditorScreenState extends State<EditorScreen> {
   void initState() {
     super.initState();
     _controller = quill.QuillController(
-      document: quill.Document(),
+      document: quill.Document()..insert(0, '\n'),
       selection: const TextSelection.collapsed(offset: 0),
     );
   }
@@ -42,8 +41,26 @@ class _EditorScreenState extends State<EditorScreen> {
     if (note != null && _existingNote == null) {
       _existingNote = note;
       _titleController.text = note.title;
-      _contentController.text = note.content.toString();
-      _selectedTag = note.tag;
+
+      if (note.content is Map<String, dynamic>) {
+        final content = note.content;
+        if (!content.toString().endsWith('\n')) {
+          content['insert'] = content['insert'] + '\n';
+        }
+        _controller = quill.QuillController(
+          document: quill.Document.fromJson(content),
+          selection: const TextSelection.collapsed(offset: 0),
+        );
+      } else if (note.content is String) {
+        _controller = quill.QuillController(
+          document: quill.Document.fromJson([
+            {"insert": "${note.content.toString()}\n"}
+          ]),
+          selection: const TextSelection.collapsed(offset: 0),
+        );
+      }
+
+      _selectedTag = note.tags.isNotEmpty ? note.tags.first : null;
     }
   }
 
@@ -57,17 +74,20 @@ class _EditorScreenState extends State<EditorScreen> {
 
     setState(() => _isLoading = true);
     try {
+      // Get the content as JSON Delta
+      final contentJson = _controller.document.toDelta().toJson();
+
       if (_existingNote != null) {
         await ApiService.updateNote(
           _existingNote!.id,
           _titleController.text,
-          _contentController.text,
+          contentJson, // Send the Delta JSON
           _selectedTag != null ? [_selectedTag!] : [],
         );
       } else {
         await ApiService.createNote(
           _titleController.text,
-          _contentController.text,
+          contentJson, // Send the Delta JSON
           _selectedTag != null ? [_selectedTag!] : [],
         );
       }
@@ -90,58 +110,91 @@ class _EditorScreenState extends State<EditorScreen> {
           style: GoogleFonts.inter(color: Colors.white),
         ),
         backgroundColor: Colors.black,
-        actions: [
-          if (_existingNote != null)
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () async {
-                final confirm = await showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Delete Note'),
-                    content: const Text('Are you sure?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Delete'),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true) {
-                  await ApiService.deleteNote(_existingNote!.id);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-        ],
       ),
       body: Column(
         children: [
-          quill.QuillToolbar.simple(
-            configurations: quill.QuillSimpleToolbarConfigurations(
-              controller: _controller,
-              showAlignmentButtons: true,
-              showBackgroundColorButton: true,
-              showBoldButton: true,
-              showColorButton: true,
-              showCodeBlock: true,
-              showFontFamily: true,
-              showFontSize: true,
-              showItalicButton: true,
-              showUnderLineButton: true,
-              showStrikeThrough: true,
-              showInlineCode: true,
-              showListBullets: true,
-              showListNumbers: true,
-              showQuote: true,
-              showIndent: true,
-              showLink: true,
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _titleController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Title',
+                hintStyle: const TextStyle(color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Colors.white),
+                ),
+              ),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: DropdownButtonFormField<String>(
+              value: _selectedTag,
+              decoration: InputDecoration(
+                hintText: 'Select Tag',
+                hintStyle: const TextStyle(color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+              ),
+              dropdownColor: Colors.grey[900],
+              style: const TextStyle(color: Colors.white),
+              items: _availableTags.map((String tag) {
+                return DropdownMenuItem<String>(
+                  value: tag,
+                  child: Text(tag),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedTag = newValue;
+                });
+              },
+            ),
+          ),
+          ExpansionTile(
+            title: Text(
+              'Formatting Options',
+              style: GoogleFonts.inter(color: Colors.white),
+            ),
+            backgroundColor: Colors.grey[900],
+            collapsedBackgroundColor: Colors.grey[900],
+            children: [
+              quill.QuillToolbar.simple(
+                configurations: quill.QuillSimpleToolbarConfigurations(
+                  controller: _controller,
+                  showAlignmentButtons: true,
+                  showBackgroundColorButton: true,
+                  showBoldButton: true,
+                  showColorButton: true,
+                  showCodeBlock: true,
+                  showFontFamily: true,
+                  showFontSize: true,
+                  showItalicButton: true,
+                  showUnderLineButton: true,
+                  showStrikeThrough: true,
+                  showInlineCode: true,
+                  showListBullets: true,
+                  showListNumbers: true,
+                  showQuote: true,
+                  showIndent: true,
+                  showLink: true,
+                ),
+              ),
+            ],
           ),
           Expanded(
             child: Container(
@@ -150,6 +203,18 @@ class _EditorScreenState extends State<EditorScreen> {
                 configurations: quill.QuillEditorConfigurations(
                   controller: _controller,
                   autoFocus: false,
+                  padding: const EdgeInsets.all(8),
+                  customStyles: quill.DefaultStyles(
+                    paragraph: quill.DefaultTextBlockStyle(
+                      TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                      quill.VerticalSpacing(0, 0),
+                      quill.VerticalSpacing(0, 0),
+                      null,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -169,7 +234,6 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   void dispose() {
     _titleController.dispose();
-    _contentController.dispose();
     _controller.dispose();
     super.dispose();
   }

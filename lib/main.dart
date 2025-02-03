@@ -5,6 +5,7 @@ import 'package:hope/screens/onboarding.dart';
 import 'package:hope/screens/register.dart';
 import 'package:hope/screens/editor.dart';
 import 'package:hope/screens/profile.dart';
+import 'package:hope/screens/note_reader.dart';
 import 'package:hope/services/api_service.dart';
 
 void main() async {
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const Register(),
         '/home': (context) => const HomeScreen(),
         '/editor': (context) => const EditorScreen(),
+        '/reader': (context) => const NoteReaderScreen(),
         '/profile': (context) => const ProfileScreen(),
       },
     );

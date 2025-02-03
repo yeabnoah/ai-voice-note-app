@@ -82,21 +82,27 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: GoogleFonts.inter(color: Colors.white),
                         ),
                         subtitle: Text(
-                          note.content.toString(),
+                          note.content is List
+                              ? note.content.map((op) => op['insert']).join()
+                              : note.content.toString(),
                           style: GoogleFonts.inter(color: Colors.grey),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        trailing: note.tag != null
+                        trailing: note.tags.isNotEmpty
                             ? Chip(
                                 label: Text(
-                                  note.tag!,
+                                  note.tags[0],
                                   style: GoogleFonts.inter(color: Colors.white),
                                 ),
-                                backgroundColor: note.tagColor,
+                                backgroundColor: Colors.blue,
                               )
                             : null,
-                        onTap: () => _navigateToEditor(note),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/reader',
+                          arguments: note,
+                        ),
                       ),
                     );
                   },

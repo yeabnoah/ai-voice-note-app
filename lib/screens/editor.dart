@@ -42,20 +42,20 @@ class _EditorScreenState extends State<EditorScreen> {
       _existingNote = note;
       _titleController.text = note.title;
 
-      if (note.content is Map<String, dynamic>) {
+      try {
         final content = note.content;
-        if (!content.toString().endsWith('\n')) {
-          content['insert'] = content['insert'] + '\n';
-        }
         _controller = quill.QuillController(
-          document: quill.Document.fromJson(content),
+          document: content is List
+              ? quill.Document.fromJson(content)
+              : quill.Document.fromJson([
+                  {"insert": "${content.toString()}\n"}
+                ]),
           selection: const TextSelection.collapsed(offset: 0),
         );
-      } else if (note.content is String) {
+      } catch (e) {
+        // Fallback for malformed content
         _controller = quill.QuillController(
-          document: quill.Document.fromJson([
-            {"insert": "${note.content.toString()}\n"}
-          ]),
+          document: quill.Document()..insert(0, note.content.toString()),
           selection: const TextSelection.collapsed(offset: 0),
         );
       }
@@ -74,24 +74,23 @@ class _EditorScreenState extends State<EditorScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // Get the content as JSON Delta
       final contentJson = _controller.document.toDelta().toJson();
 
       if (_existingNote != null) {
         await ApiService.updateNote(
           _existingNote!.id,
           _titleController.text,
-          contentJson, // Send the Delta JSON
+          contentJson,
           _selectedTag != null ? [_selectedTag!] : [],
         );
       } else {
         await ApiService.createNote(
           _titleController.text,
-          contentJson, // Send the Delta JSON
+          contentJson,
           _selectedTag != null ? [_selectedTag!] : [],
         );
       }
-      Navigator.pop(context);
+      Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),

@@ -1,7 +1,9 @@
+import 'dart:convert';
+
 class Note {
   final String id;
   final String title;
-  final dynamic content; // Can be Map<String, dynamic> for Delta or String
+  final dynamic content;
   final List<String> tags;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -16,10 +18,23 @@ class Note {
   });
 
   factory Note.fromJson(Map<String, dynamic> json) {
+    var content = json['content'];
+    // If content is a string (likely JSON string), parse it
+    if (content is String) {
+      try {
+        content = jsonDecode(content);
+      } catch (e) {
+        // If parsing fails, keep it as string
+        content = [
+          {"insert": "$content\n"}
+        ];
+      }
+    }
+
     return Note(
       id: json['_id'],
       title: json['title'],
-      content: json['content'],
+      content: content,
       tags: List<String>.from(json['tags'] ?? []),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),

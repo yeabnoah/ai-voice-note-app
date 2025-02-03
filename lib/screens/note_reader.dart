@@ -31,20 +31,20 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
     if (note != null && _note == null) {
       _note = note;
 
-      if (note.content is Map<String, dynamic>) {
+      try {
         final content = note.content;
-        if (!content.toString().endsWith('\n')) {
-          content['insert'] = content['insert'] + '\n';
-        }
         _controller = quill.QuillController(
-          document: quill.Document.fromJson(content),
+          document: content is List
+              ? quill.Document.fromJson(content)
+              : quill.Document.fromJson([
+                  {"insert": "${content.toString()}\n"}
+                ]),
           selection: const TextSelection.collapsed(offset: 0),
         );
-      } else if (note.content is String) {
+      } catch (e) {
+        // Fallback for malformed content
         _controller = quill.QuillController(
-          document: quill.Document.fromJson([
-            {"insert": "${note.content.toString()}\n"}
-          ]),
+          document: quill.Document()..insert(0, note.content.toString()),
           selection: const TextSelection.collapsed(offset: 0),
         );
       }

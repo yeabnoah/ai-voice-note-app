@@ -82,9 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: GoogleFonts.inter(color: Colors.white),
                         ),
                         subtitle: Text(
-                          note.content is List
-                              ? note.content.map((op) => op['insert']).join()
-                              : note.content.toString(),
+                          _getPlainText(note.content),
                           style: GoogleFonts.inter(color: Colors.grey),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -113,5 +111,16 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const Icon(Icons.add, color: Colors.black),
       ),
     );
+  }
+
+  String _getPlainText(dynamic content) {
+    if (content is List) {
+      return content
+          .map((op) => op['insert'] ?? '')
+          .join()
+          .replaceAll('\n', ' ')
+          .trim();
+    }
+    return content.toString();
   }
 }

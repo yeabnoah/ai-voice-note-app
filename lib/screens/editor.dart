@@ -186,23 +186,24 @@ class _EditorScreenState extends State<EditorScreen> {
   void _onSpeechResult(SpeechRecognitionResult result) {
     if (result.recognizedWords.isNotEmpty) {
       setState(() {
-        // Get cursor position
-        int cursorPosition = _controller.selection.baseOffset;
-        if (cursorPosition < 0) {
-          cursorPosition = _controller.document.length;
-        }
+        // Always append to the end of the document
+        final currentText = _controller.document.toPlainText();
 
-        // For both partial and final results, just update at cursor
-        _controller.replaceText(
-          cursorPosition,
-          _controller.document.length - cursorPosition,
-          result.recognizedWords + (result.finalResult ? '\n' : ''),
-          TextSelection.collapsed(
-            offset: cursorPosition +
-                result.recognizedWords.length +
-                (result.finalResult ? 1 : 0),
-          ),
-        );
+        if (result.finalResult) {
+          // For final results, append with newline
+          _controller.document = quill.Document.fromJson([
+            {"insert": currentText + result.recognizedWords + '\n'}
+          ]);
+        } else {
+          // For partial results, update the last line
+          final lastNewLine = currentText.lastIndexOf('\n');
+          final textBeforeCursor =
+              lastNewLine >= 0 ? currentText.substring(0, lastNewLine + 1) : '';
+
+          _controller.document = quill.Document.fromJson([
+            {"insert": textBeforeCursor + result.recognizedWords}
+          ]);
+        }
       });
     }
   }
@@ -223,51 +224,31 @@ class _EditorScreenState extends State<EditorScreen> {
           Row(
             children: [
               Expanded(
-                child: _showAllTools
-                    ? quill.QuillSimpleToolbar(
-                        configurations: quill.QuillSimpleToolbarConfigurations(
-                          controller: _controller,
-                          showBoldButton: true,
-                          showItalicButton: true,
-                          showUnderLineButton: true,
-                          showStrikeThrough: true,
-                          showColorButton: true,
-                          showBackgroundColorButton: true,
-                          showClearFormat: true,
-                          showAlignmentButtons: true,
-                          showHeaderStyle: true,
-                          showListBullets: true,
-                          showListNumbers: true,
-                          showQuote: true,
-                          showCodeBlock: true,
-                          showIndent: true,
-                          showLink: true,
-                          multiRowsDisplay: true,
-                          showDividers: true,
-                        ),
-                      )
-                    : quill.QuillSimpleToolbar(
-                        configurations: quill.QuillSimpleToolbarConfigurations(
-                          controller: _controller,
-                          showBoldButton: true,
-                          showItalicButton: true,
-                          showUnderLineButton: true,
-                          showListBullets: true,
-                          showColorButton: true,
-                          showBackgroundColorButton: false,
-                          showClearFormat: false,
-                          showHeaderStyle: false,
-                          showListNumbers: false,
-                          showQuote: false,
-                          showCodeBlock: false,
-                          showIndent: false,
-                          showLink: false,
-                          showStrikeThrough: false,
-                          showAlignmentButtons: false,
-                          multiRowsDisplay: false,
-                          showDividers: true,
-                        ),
-                      ),
+                child: quill.QuillSimpleToolbar(
+                  configurations: quill.QuillSimpleToolbarConfigurations(
+                    controller: _controller,
+                    showBoldButton: true,
+                    showItalicButton: true,
+                    showUnderLineButton: true,
+                    showUndo: true,
+                    showRedo: true,
+                    // Disable other buttons
+                    showStrikeThrough: false,
+                    showColorButton: false,
+                    showBackgroundColorButton: false,
+                    showClearFormat: false,
+                    showAlignmentButtons: false,
+                    showHeaderStyle: false,
+                    showListBullets: false,
+                    showListNumbers: false,
+                    showQuote: false,
+                    showCodeBlock: false,
+                    showIndent: false,
+                    showLink: false,
+                    multiRowsDisplay: true,
+                    showDividers: true,
+                  ),
+                ),
               ),
               IconButton(
                 icon: Icon(
@@ -310,7 +291,8 @@ class _EditorScreenState extends State<EditorScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
               controller: _titleController,
               style: Theme.of(context).textTheme.headlineSmall,
@@ -321,12 +303,15 @@ class _EditorScreenState extends State<EditorScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
             child: DropdownButtonFormField<String>(
               value: _selectedTag,
               decoration: const InputDecoration(
                 hintText: 'Select tag',
                 border: OutlineInputBorder(),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
               items: _availableTags.map((tag) {
                 return DropdownMenuItem(
@@ -343,7 +328,7 @@ class _EditorScreenState extends State<EditorScreen> {
           ),
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
               child: quill.QuillEditor.basic(
                 configurations: quill.QuillEditorConfigurations(
                   controller: _controller,
@@ -359,6 +344,7 @@ class _EditorScreenState extends State<EditorScreen> {
           _buildQuillToolbar(),
         ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: _toggleListening,
         backgroundColor: _isListening

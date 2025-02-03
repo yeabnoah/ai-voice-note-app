@@ -37,7 +37,7 @@ app.get("/health", (req: Request, res: Response) => {
 app.post('/auth/register', authController.register);
 app.post('/auth/login', authController.login);
 app.post('/signinwithgoogle', authController.googleSignIn);
-// app.get('/auth/me', auth, authController.getCurrentUser);
+app.get('/auth/me', auth, authController.getCurrentUser);
 
 // Note routes (protected)
 app.get('/note/getallnotes', auth, noteController.getAllNotes);

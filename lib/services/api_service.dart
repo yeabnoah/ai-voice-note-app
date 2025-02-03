@@ -191,17 +191,38 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getCurrentUser() async {
     final token = await getToken();
-    final response = await http.get(
-      Uri.parse('$baseUrl/auth/me'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
+    if (token == null) {
+      throw Exception('No authentication token found - Please log in again');
     }
-    throw Exception('Failed to load user data');
+
+    try {
+      print('Debug - Making request to /auth/me');
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/me'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('Debug - Response status code: ${response.statusCode}');
+      print('Debug - Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data;
+      } else if (response.statusCode == 401) {
+        throw Exception('Session expired - Please log in again');
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ??
+            'Failed to load user data (Status: ${response.statusCode})');
+      }
+    } catch (e) {
+      if (e is FormatException) {
+        throw Exception('Invalid response format from server');
+      }
+      throw Exception('Network error: ${e.toString()}');
+    }
   }
 }

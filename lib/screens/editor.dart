@@ -17,6 +17,7 @@ class _EditorScreenState extends State<EditorScreen> {
   final _scrollController = ScrollController();
   String? _selectedTag;
   bool _isLoading = false;
+  bool _showAllTools = false;
   Note? _existingNote;
 
   final List<String> _availableTags = [
@@ -97,6 +98,82 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  Widget _buildQuillToolbar() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _showAllTools
+                    ? quill.QuillSimpleToolbar(
+                        configurations: quill.QuillSimpleToolbarConfigurations(
+                          controller: _controller,
+                          showBoldButton: true,
+                          showItalicButton: true,
+                          showUnderLineButton: true,
+                          showStrikeThrough: true,
+                          showColorButton: true,
+                          showBackgroundColorButton: true,
+                          showClearFormat: true,
+                          showAlignmentButtons: true,
+                          showHeaderStyle: true,
+                          showListBullets: true,
+                          showListNumbers: true,
+                          showQuote: true,
+                          showCodeBlock: true,
+                          showIndent: true,
+                          showLink: true,
+                          multiRowsDisplay: true,
+                          showDividers: true,
+                        ),
+                      )
+                    : quill.QuillSimpleToolbar(
+                        configurations: quill.QuillSimpleToolbarConfigurations(
+                          controller: _controller,
+                          showBoldButton: true,
+                          showItalicButton: true,
+                          showUnderLineButton: true,
+                          showListBullets: true,
+                          showColorButton: true,
+                          showBackgroundColorButton: false,
+                          showClearFormat: false,
+                          showHeaderStyle: false,
+                          showListNumbers: false,
+                          showQuote: false,
+                          showCodeBlock: false,
+                          showIndent: false,
+                          showLink: false,
+                          showStrikeThrough: false,
+                          showAlignmentButtons: false,
+                          multiRowsDisplay: false,
+                          showDividers: true,
+                        ),
+                      ),
+              ),
+              IconButton(
+                icon: Icon(
+                  _showAllTools ? Icons.more_horiz : Icons.more_vert,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onPressed: () => setState(() => _showAllTools = !_showAllTools),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -171,15 +248,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
             ),
           ),
-          quill.QuillSimpleToolbar(
-            configurations: quill.QuillSimpleToolbarConfigurations(
-              controller: _controller,
-              showBoldButton: true,
-              showItalicButton: true,
-              showUnderLineButton: true,
-              showListBullets: true,
-            ),
-          ),
+          _buildQuillToolbar(),
         ],
       ),
     );

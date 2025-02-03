@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hope/models/note.dart';
 import 'package:hope/services/api_service.dart';
+import 'package:hope/screens/speech_to_text_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -56,6 +57,32 @@ class _HomeScreenState extends State<HomeScreen> {
       arguments: note,
     );
     _loadNotes();
+  }
+
+  Future<void> _openSpeechToText() async {
+    final text = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SpeechToTextScreen(),
+      ),
+    );
+
+    if (text != null && text.isNotEmpty) {
+      Navigator.pushNamed(
+        context,
+        '/editor',
+        arguments: Note(
+          id: '',
+          title: 'Voice Note',
+          content: [
+            {"insert": "$text\n"}
+          ],
+          tags: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+    }
   }
 
   @override
@@ -127,10 +154,23 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToEditor(),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'speech',
+            onPressed: _openSpeechToText,
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            child: const Icon(Icons.mic, color: Colors.white),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            heroTag: 'add',
+            onPressed: () => _navigateToEditor(),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
+        ],
       ),
     );
   }

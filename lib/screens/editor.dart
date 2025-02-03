@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart' show ChangeSource;
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:hope/models/note.dart';
 import 'package:hope/services/api_service.dart';
+import 'package:hope/screens/speech_to_text_screen.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:speech_to_text/speech_recognition_result.dart'
+    show SpeechRecognitionResult;
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({super.key});
@@ -27,10 +32,16 @@ class _EditorScreenState extends State<EditorScreen> {
     'Important'
   ];
 
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+  String _currentLocaleId = '';
+  double _soundLevel = 0.0;
+
   @override
   void initState() {
     super.initState();
     _controller = quill.QuillController.basic();
+    _initSpeech();
   }
 
   @override
@@ -95,6 +106,104 @@ class _EditorScreenState extends State<EditorScreen> {
       }
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _openSpeechToText() async {
+    final text = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SpeechToTextScreen(),
+      ),
+    );
+
+    if (text != null && text.isNotEmpty) {
+      _controller.document.insert(
+        _controller.document.length,
+        text,
+      );
+    }
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      var hasSpeech = await _speech.initialize(
+        onError: (error) => debugPrint('Error: $error'),
+        onStatus: (status) => debugPrint('Status: $status'),
+      );
+
+      if (hasSpeech) {
+        var systemLocale = await _speech.systemLocale();
+        setState(() {
+          _currentLocaleId = systemLocale?.localeId ?? '';
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing speech: $e');
+    }
+  }
+
+  Future<void> _toggleListening() async {
+    try {
+      if (!_isListening) {
+        if (!_speech.isAvailable) {
+          await _initSpeech();
+        }
+
+        // Move cursor to end before starting
+        _controller.updateSelection(
+          TextSelection.collapsed(offset: _controller.document.length),
+          ChangeSource.local,
+        );
+
+        await _speech.listen(
+          onResult: _onSpeechResult,
+          listenFor: const Duration(seconds: 30),
+          localeId: _currentLocaleId,
+          cancelOnError: true,
+          partialResults: true,
+          listenMode: stt.ListenMode.dictation,
+          onSoundLevelChange: (level) {
+            setState(() {
+              _soundLevel = level;
+            });
+          },
+        );
+
+        setState(() => _isListening = true);
+      } else {
+        await _speech.stop();
+        setState(() {
+          _isListening = false;
+          _soundLevel = 0.0;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error toggling speech recognition: $e');
+    }
+  }
+
+  void _onSpeechResult(SpeechRecognitionResult result) {
+    if (result.recognizedWords.isNotEmpty) {
+      setState(() {
+        // Get cursor position
+        int cursorPosition = _controller.selection.baseOffset;
+        if (cursorPosition < 0) {
+          cursorPosition = _controller.document.length;
+        }
+
+        // For both partial and final results, just update at cursor
+        _controller.replaceText(
+          cursorPosition,
+          _controller.document.length - cursorPosition,
+          result.recognizedWords + (result.finalResult ? '\n' : ''),
+          TextSelection.collapsed(
+            offset: cursorPosition +
+                result.recognizedWords.length +
+                (result.finalResult ? 1 : 0),
+          ),
+        );
+      });
     }
   }
 
@@ -250,11 +359,40 @@ class _EditorScreenState extends State<EditorScreen> {
           _buildQuillToolbar(),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _toggleListening,
+        backgroundColor: _isListening
+            ? Theme.of(context).colorScheme.error
+            : Theme.of(context).colorScheme.secondary,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(
+              _isListening ? Icons.stop : Icons.mic,
+              color: Colors.white,
+            ),
+            if (_isListening)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 100),
+                width: 40 + (_soundLevel * 5),
+                height: 40 + (_soundLevel * 5),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.5),
+                    width: 2,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   void dispose() {
+    _speech.stop();
     _titleController.dispose();
     _controller.dispose();
     _focusNode.dispose();

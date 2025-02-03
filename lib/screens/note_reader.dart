@@ -86,51 +86,7 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: () async {
-              final confirm = await showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  backgroundColor: Colors.grey[900],
-                  title: Text(
-                    'Delete Note',
-                    style: GoogleFonts.inter(color: Colors.white),
-                  ),
-                  content: Text(
-                    'Are you sure?',
-                    style: GoogleFonts.inter(color: Colors.white),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text(
-                        'Cancel',
-                        style: GoogleFonts.inter(color: Colors.white),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: Text(
-                        'Delete',
-                        style: GoogleFonts.inter(color: Colors.red),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-              if (confirm == true && _note != null) {
-                try {
-                  await ApiService.deleteNote(_note!.id);
-                  Navigator.pushReplacementNamed(context, '/home');
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString())),
-                    );
-                  }
-                }
-              }
-            },
+            onPressed: _deleteNote,
           ),
         ],
       ),
@@ -142,21 +98,63 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
             // readOnly: true,
             autoFocus: false,
             padding: const EdgeInsets.all(8),
-            customStyles: quill.DefaultStyles(
-              paragraph: quill.DefaultTextBlockStyle(
-                TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                ),
-                quill.VerticalSpacing(0, 0),
-                quill.VerticalSpacing(0, 0),
-                null,
-              ),
-            ),
+            // styles: const quill.DefaultStyles(
+            //   paragraph: quill.DefaultTextStyle(
+            //     fontSize: 16,
+            //     color: Colors.white,
+            //   ),
+            // ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _deleteNote() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Delete Note',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        content: Text(
+          'Are you sure you want to delete this note?',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && _note != null) {
+      try {
+        await ApiService.deleteNote(_note!.id);
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString())),
+          );
+        }
+      }
+    }
   }
 
   @override

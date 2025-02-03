@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
-import 'package:google_fonts/google_fonts.dart';
 import 'package:hope/models/note.dart';
 import 'package:hope/services/api_service.dart';
 
@@ -14,6 +13,8 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   late quill.QuillController _controller;
   final _titleController = TextEditingController();
+  final _focusNode = FocusNode();
+  final _scrollController = ScrollController();
   String? _selectedTag;
   bool _isLoading = false;
   Note? _existingNote;
@@ -28,10 +29,7 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = quill.QuillController(
-      document: quill.Document()..insert(0, '\n'),
-      selection: const TextSelection.collapsed(offset: 0),
-    );
+    _controller = quill.QuillController.basic();
   }
 
   @override
@@ -41,6 +39,7 @@ class _EditorScreenState extends State<EditorScreen> {
     if (note != null && _existingNote == null) {
       _existingNote = note;
       _titleController.text = note.title;
+      _selectedTag = note.tags.isNotEmpty ? note.tags.first : null;
 
       try {
         final content = note.content;
@@ -53,21 +52,15 @@ class _EditorScreenState extends State<EditorScreen> {
           selection: const TextSelection.collapsed(offset: 0),
         );
       } catch (e) {
-        // Fallback for malformed content
-        _controller = quill.QuillController(
-          document: quill.Document()..insert(0, note.content.toString()),
-          selection: const TextSelection.collapsed(offset: 0),
-        );
+        debugPrint('Error loading note content: $e');
       }
-
-      _selectedTag = note.tags.isNotEmpty ? note.tags.first : null;
     }
   }
 
   Future<void> _saveNote() async {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
+        const SnackBar(content: Text('Please enter a title')),
       );
       return;
     }
@@ -90,11 +83,15 @@ class _EditorScreenState extends State<EditorScreen> {
           _selectedTag != null ? [_selectedTag!] : [],
         );
       }
-      Navigator.pushReplacementNamed(context, '/home');
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -104,128 +101,86 @@ class _EditorScreenState extends State<EditorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _existingNote != null ? 'Edit Note' : 'New Note',
-          style: GoogleFonts.inter(color: Colors.white),
-        ),
-        backgroundColor: Colors.black,
+        title: Text(_existingNote != null ? 'Edit Note' : 'New Note'),
+        actions: [
+          if (_isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.check),
+              onPressed: _saveNote,
+            ),
+        ],
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _titleController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
+              style: Theme.of(context).textTheme.headlineSmall,
+              decoration: const InputDecoration(
                 hintText: 'Title',
-                hintStyle: const TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Colors.grey),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Colors.white),
-                ),
+                border: InputBorder.none,
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: DropdownButtonFormField<String>(
               value: _selectedTag,
-              decoration: InputDecoration(
-                hintText: 'Select Tag',
-                hintStyle: const TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Colors.grey),
-                ),
+              decoration: const InputDecoration(
+                hintText: 'Select tag',
+                border: OutlineInputBorder(),
               ),
-              dropdownColor: Colors.grey[900],
-              style: const TextStyle(color: Colors.white),
-              items: _availableTags.map((String tag) {
-                return DropdownMenuItem<String>(
+              items: _availableTags.map((tag) {
+                return DropdownMenuItem(
                   value: tag,
                   child: Text(tag),
                 );
               }).toList(),
-              onChanged: (String? newValue) {
+              onChanged: (value) {
                 setState(() {
-                  _selectedTag = newValue;
+                  _selectedTag = value;
                 });
               },
             ),
           ),
-          ExpansionTile(
-            title: Text(
-              'Formatting Options',
-              style: GoogleFonts.inter(color: Colors.white),
-            ),
-            backgroundColor: Colors.grey[900],
-            collapsedBackgroundColor: Colors.grey[900],
-            children: [
-              quill.QuillToolbar.simple(
-                configurations: quill.QuillSimpleToolbarConfigurations(
-                  controller: _controller,
-                  showAlignmentButtons: true,
-                  showBackgroundColorButton: true,
-                  showBoldButton: true,
-                  showColorButton: true,
-                  showCodeBlock: true,
-                  showFontFamily: true,
-                  showFontSize: true,
-                  showItalicButton: true,
-                  showUnderLineButton: true,
-                  showStrikeThrough: true,
-                  showInlineCode: true,
-                  showListBullets: true,
-                  showListNumbers: true,
-                  showQuote: true,
-                  showIndent: true,
-                  showLink: true,
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 8),
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(16),
               child: quill.QuillEditor.basic(
                 configurations: quill.QuillEditorConfigurations(
                   controller: _controller,
                   autoFocus: false,
-                  padding: const EdgeInsets.all(8),
-                  customStyles: quill.DefaultStyles(
-                    paragraph: quill.DefaultTextBlockStyle(
-                      TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                      quill.VerticalSpacing(0, 0),
-                      quill.VerticalSpacing(0, 0),
-                      null,
-                    ),
-                  ),
+                  expands: false,
+                  padding: EdgeInsets.zero,
+                  scrollable: true,
+                  placeholder: 'Start writing...',
                 ),
               ),
             ),
           ),
+          quill.QuillSimpleToolbar(
+            configurations: quill.QuillSimpleToolbarConfigurations(
+              controller: _controller,
+              showBoldButton: true,
+              showItalicButton: true,
+              showUnderLineButton: true,
+              showListBullets: true,
+            ),
+          ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _isLoading ? null : _saveNote,
-        backgroundColor: Colors.white,
-        child: _isLoading
-            ? const CircularProgressIndicator()
-            : const Icon(Icons.save, color: Colors.black),
       ),
     );
   }
@@ -234,6 +189,8 @@ class _EditorScreenState extends State<EditorScreen> {
   void dispose() {
     _titleController.dispose();
     _controller.dispose();
+    _focusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 }

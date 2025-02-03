@@ -17,7 +17,6 @@ class NoteReaderScreen extends StatefulWidget {
 class _NoteReaderScreenState extends State<NoteReaderScreen> {
   late quill.QuillController _controller;
   Note? _note;
-  bool _markdownMode = false;
   final FlutterTts _tts = FlutterTts();
   bool _isSpeaking = false;
   bool _ttsInitialized = false;
@@ -116,64 +115,15 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _note?.title ?? '',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            if (_note?.tags.isNotEmpty ?? false)
-              Container(
-                margin: const EdgeInsets.only(top: 4),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _note!.tags.first,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-          ],
-        ),
         actions: [
-          IconButton(
-            icon: Icon(
-              _isSpeaking ? Icons.stop_circle : Icons.play_circle,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-            onPressed: _isSpeaking ? _stop : _speak,
-            tooltip: _isSpeaking ? 'Stop Reading' : 'Read Aloud',
-          ),
-          IconButton(
-            icon: Icon(
-              _markdownMode ? Icons.code_off : Icons.code,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            onPressed: () => setState(() => _markdownMode = !_markdownMode),
-            tooltip: 'Toggle Markdown View',
-          ),
           IconButton(
             icon: Icon(
               Icons.edit_outlined,
               color: Theme.of(context).colorScheme.secondary,
             ),
             onPressed: () {
-              Navigator.pushReplacementNamed(
-                context,
-                '/editor',
-                arguments: _note,
-              );
+              Navigator.pushReplacementNamed(context, '/editor',
+                  arguments: _note);
             },
           ),
           IconButton(
@@ -185,26 +135,83 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
           ),
         ],
       ),
-      body: Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _note?.title ?? '',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        _isSpeaking ? Icons.stop_circle : Icons.play_circle,
+                        color: Theme.of(context).colorScheme.secondary,
+                        size: 28,
+                      ),
+                      onPressed: _isSpeaking ? _stop : _speak,
+                      tooltip: _isSpeaking ? 'Stop Reading' : 'Read Aloud',
+                    ),
+                  ],
+                ),
+                if (_note?.tags.isNotEmpty ?? false)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4, bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _note!.tags.first,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: _markdownMode
-              ? Markdown(
+          ),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Theme.of(context).dividerColor.withOpacity(0.1),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Markdown(
                   data: _quillToMarkdown(),
                   selectable: true,
                   padding: const EdgeInsets.all(16),
@@ -227,28 +234,11 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
                           fontStyle: FontStyle.italic,
                         ),
                   ),
-                )
-              : Container(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: quill.QuillEditor.basic(
-                    configurations: quill.QuillEditorConfigurations(
-                      controller: _controller,
-                      // readOnly: true,
-                      autoFocus: false,
-                      padding: const EdgeInsets.all(16),
-                      scrollable: true,
-                      // customStyles: quill.DefaultStyles(
-                      //   paragraph: quill.DefaultTextBlockStyle(
-                      //     Theme.of(context).textTheme.bodyLarge!,
-                      //     const VerticalSpacing(0, 0),
-                      //     const VerticalSpacing(0, 0),
-                      //     null,
-                      //   ),
-                      // ),
-                    ),
-                  ),
                 ),
-        ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -5,8 +5,7 @@ import 'package:hope/models/note.dart';
 import 'package:hope/models/user.dart';
 
 class ApiService {
-  static const String baseUrl =
-      'http://192.168.1.8:3000'; // For Android emulator
+  static const String baseUrl = 'http://10.0.2.2:3000'; // For Android emulator
   // static const String baseUrl = 'http://localhost:3000'; // For iOS simulator
 
   User? currentUser;

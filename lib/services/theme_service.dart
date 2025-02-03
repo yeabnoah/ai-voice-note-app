@@ -6,7 +6,7 @@ class ThemeService extends ChangeNotifier {
   final SharedPreferences _prefs;
   bool _isDarkMode;
 
-  ThemeService(this._prefs) : _isDarkMode = _prefs.getBool(_themeKey) ?? false;
+  ThemeService(this._prefs) : _isDarkMode = _prefs.getBool(_themeKey) ?? true;
 
   bool get isDarkMode => _isDarkMode;
 
@@ -31,13 +31,14 @@ class ThemeService extends ChangeNotifier {
 
   ThemeData get darkTheme => ThemeData(
         brightness: Brightness.dark,
-        primaryColor: const Color(0xFF2D2D2D),
+        primaryColor: const Color(0xFF6E56F8),
         scaffoldBackgroundColor: const Color(0xFF1A1A1A),
         cardColor: const Color(0xFF2D2D2D),
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFF6E56F8),
           secondary: Color(0xFF9182FA),
           surface: Color(0xFF2D2D2D),
+          background: Color(0xFF1A1A1A),
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
@@ -49,9 +50,41 @@ class ThemeService extends ChangeNotifier {
             color: Colors.white,
           ),
         ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF2D2D2D),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF6E56F8)),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6E56F8),
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
         textTheme: const TextTheme(
           headlineLarge: TextStyle(
             fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          headlineMedium: TextStyle(
+            fontSize: 24,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),

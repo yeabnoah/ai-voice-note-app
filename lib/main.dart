@@ -18,8 +18,11 @@ void main() async {
   final isLoggedIn = await ApiService.isLoggedIn();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeService(prefs),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeService(prefs)),
+        Provider(create: (_) => ApiService()),
+      ],
       child: MyApp(isLoggedIn: isLoggedIn),
     ),
   );

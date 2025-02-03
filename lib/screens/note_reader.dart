@@ -55,27 +55,42 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               _note?.title ?? '',
-              style: GoogleFonts.inter(color: Colors.white),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             if (_note?.tags.isNotEmpty ?? false)
-              Text(
-                _note!.tags.first,
-                style: GoogleFonts.inter(
-                  color: Colors.blue,
-                  fontSize: 12,
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _note!.tags.first,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 12,
+                  ),
                 ),
               ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
+            icon: Icon(
+              Icons.edit,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             onPressed: () {
               Navigator.pushReplacementNamed(
                 context,
@@ -85,25 +100,37 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
+            icon: const Icon(
+              Icons.delete,
+              color: Colors.red,
+            ),
             onPressed: _deleteNote,
           ),
         ],
       ),
       body: Container(
         padding: const EdgeInsets.all(16),
-        child: quill.QuillEditor.basic(
-          configurations: quill.QuillEditorConfigurations(
-            controller: _controller,
-            // readOnly: true,
-            autoFocus: false,
-            padding: const EdgeInsets.all(8),
-            // styles: const quill.DefaultStyles(
-            //   paragraph: quill.DefaultTextStyle(
-            //     fontSize: 16,
-            //     color: Colors.white,
-            //   ),
-            // ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: quill.QuillEditor.basic(
+            configurations: quill.QuillEditorConfigurations(
+              controller: _controller,
+              // readOnly: true,
+              autoFocus: false,
+              padding: EdgeInsets.zero,
+              // customStyles: quill.DefaultStyles(
+              //   paragraph: quill.DefaultTextBlockStyle(
+              //     Theme.of(context).textTheme.bodyLarge!,
+              //     const VerticalSpacing(0, 0),
+              //     const VerticalSpacing(0, 0),
+              //     null,
+              //   ),
+              // ),
+            ),
           ),
         ),
       ),
@@ -114,27 +141,38 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
         title: Text(
           'Delete Note',
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Colors.red,
+              ),
         ),
         content: Text(
           'Are you sure you want to delete this note?',
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               'Cancel',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
               'Delete',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -150,7 +188,15 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString())),
+            SnackBar(
+              content: Text(e.toString()),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
           );
         }
       }

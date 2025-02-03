@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hope/models/note.dart';
+import 'package:hope/models/user.dart';
 
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:3000'; // For Android emulator
   // static const String baseUrl = 'http://localhost:3000'; // For iOS simulator
+
+  User? currentUser;
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -184,5 +187,21 @@ class ApiService {
     if (token == null) return false;
 
     return await validateToken();
+  }
+
+  static Future<Map<String, dynamic>> getCurrentUser() async {
+    final token = await getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/auth/me'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('Failed to load user data');
   }
 }

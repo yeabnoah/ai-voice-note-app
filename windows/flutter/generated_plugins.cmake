@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
+  flutter_tts
   permission_handler_windows
   record_windows
   url_launcher_windows

@@ -226,4 +226,21 @@ class ApiService {
       throw Exception('Network error: ${e.toString()}');
     }
   }
+
+  static Future<Map<String, dynamic>> transformText(
+      String text, String theme) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/ai/generate'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'note': text,
+        'theme': theme,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('Failed to transform text');
+  }
 }

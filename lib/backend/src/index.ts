@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import { auth } from './middleware/auth';
 import * as authController from './controllers/authController';
 import * as noteController from './controllers/noteController';
+import generateContent from "./controllers/aiController";
+
 
 dotenv.config();
 
@@ -33,6 +35,11 @@ app.get("/health", (req: Request, res: Response) => {
     }
 });
 
+
+
+
+
+
 // Auth routes
 app.post('/auth/register', authController.register);
 app.post('/auth/login', authController.login);
@@ -45,6 +52,7 @@ app.get('/note/singlenote/:id', auth, noteController.getSingleNote);
 app.post('/note/createNote', auth, noteController.createNote);
 app.put('/note/singlenote/:id', auth, noteController.updateNote);
 app.delete('/note/singlenote/:id', auth, noteController.deleteNote);
+app.post("/ai/generate", generateContent);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

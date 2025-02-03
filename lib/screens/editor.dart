@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:hope/models/note.dart';
 import 'package:hope/services/api_service.dart';
-import 'package:hope/services/speech_service.dart';
-import 'package:hope/services/voice_service.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({super.key});
@@ -21,11 +19,6 @@ class _EditorScreenState extends State<EditorScreen> {
   bool _isLoading = false;
   bool _showAllTools = false;
   Note? _existingNote;
-  final SpeechService _speechService = SpeechService();
-  bool _isListening = false;
-  final VoiceService _voiceService = VoiceService();
-  bool _isRecording = false;
-  String? _recordingPath;
 
   final List<String> _availableTags = [
     'Personal',
@@ -38,21 +31,6 @@ class _EditorScreenState extends State<EditorScreen> {
   void initState() {
     super.initState();
     _controller = quill.QuillController.basic();
-    _checkSpeechAvailability();
-    _voiceService.init();
-  }
-
-  Future<void> _checkSpeechAvailability() async {
-    final available = await _speechService.init();
-    if (!available && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Speech recognition is not available on this device. You can still type your notes.'),
-          duration: Duration(seconds: 5),
-        ),
-      );
-    }
   }
 
   @override
@@ -117,31 +95,6 @@ class _EditorScreenState extends State<EditorScreen> {
       }
     } finally {
       setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _toggleListening() async {
-    try {
-      if (!_isListening) {
-        await _speechService.startListening((text) {
-          _controller.document.insert(
-            _controller.document.length,
-            '$text ',
-          );
-        });
-        setState(() => _isListening = true);
-      } else {
-        await _speechService.stopListening();
-        setState(() => _isListening = false);
-      }
-    } catch (e) {
-      setState(() => _isListening = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Speech recognition error: ${e.toString()}'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
     }
   }
 
@@ -221,63 +174,6 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  Widget _buildVoiceNotesList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      itemCount: _recordingPath != null ? 1 : 0,
-      itemBuilder: (context, index) {
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: ListTile(
-            leading: const Icon(Icons.audio_file),
-            title: Text('Recording'),
-            onTap: () {
-              _controller.document.insert(
-                _controller.document.length - 1,
-                '[Voice Note] ',
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _toggleRecording() async {
-    try {
-      if (!_isRecording) {
-        await _voiceService.startRecording();
-        setState(() {
-          _isRecording = true;
-        });
-      } else {
-        final path = await _voiceService.stopRecording();
-        setState(() {
-          _isRecording = false;
-          _recordingPath = path;
-        });
-
-        if (path != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Recording saved successfully')),
-          );
-          // Insert the recording reference into the editor
-          _controller.document.insert(
-            _controller.document.length,
-            '[Voice Recording: ${path.split('/').last}]\n',
-          );
-        }
-      }
-    } catch (e) {
-      setState(() {
-        _isRecording = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -301,16 +197,6 @@ class _EditorScreenState extends State<EditorScreen> {
               onPressed: _saveNote,
             ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _toggleListening,
-        backgroundColor: _isListening
-            ? Theme.of(context).colorScheme.error
-            : Theme.of(context).primaryColor,
-        child: Icon(
-          _isListening ? Icons.stop : Icons.mic,
-          size: 32,
-        ),
       ),
       body: Column(
         children: [
@@ -346,11 +232,6 @@ class _EditorScreenState extends State<EditorScreen> {
               },
             ),
           ),
-          if (_recordingPath != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Text('Recording saved: $_recordingPath'),
-            ),
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -378,8 +259,6 @@ class _EditorScreenState extends State<EditorScreen> {
     _controller.dispose();
     _focusNode.dispose();
     _scrollController.dispose();
-    _speechService.dispose();
-    _voiceService.dispose();
     super.dispose();
   }
 }
